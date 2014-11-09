@@ -4,6 +4,8 @@
 # Except these files
 !.gitignore
 !sim-outorder.c
+!bpred.c
+!bpred.h
 !LICENSE
 !README
 !results/
