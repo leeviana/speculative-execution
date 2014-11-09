@@ -6,6 +6,7 @@
 !sim-outorder.c
 !bpred.c
 !bpred.h
+!tests.sh
 !LICENSE
 !README
 !results/
