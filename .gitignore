@@ -6,6 +6,8 @@
 !sim-outorder.c
 !bpred.c
 !bpred.h
+!wattchdiff.txt
+!bpreddiff.txt
 !tests.sh
 !LICENSE
 !README
