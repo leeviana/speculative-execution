@@ -4573,6 +4573,11 @@ ruu_fetch(void)
 	      /* no predicted taken target, attempt not taken target */
 	      fetch_pred_PC = fetch_regs_PC + sizeof(md_inst_t);
 	    }
+      else if(fetch_pred_PC == -1) 
+        {
+            fetch_pred_PC = -1;
+            /* kind of useless at the moment, but not sure if -1 is a 
+        }
 	  else
 	    {
 	      /* go with target, NOTE: discontinuous fetch, so terminate */
