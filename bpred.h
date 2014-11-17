@@ -112,12 +112,17 @@ struct bpred_btb_ent_t {
   md_addr_t addr;		/* address of branch being tracked */
   enum md_opcode op;		/* opcode of branch corresp. to addr */
   md_addr_t target;		/* last destination of branch when taken */
+
+  char taken_counter; /*552 - Our global confidence levels - in the BT entry to allow pred agnostacity*/
+  char not_taken_counter;
+
   struct bpred_btb_ent_t *prev, *next; /* lru chaining pointers */
 };
 
 /* direction predictor def */
 struct bpred_dir_t {
   enum bpred_class class;	/* type of predictor */
+
   union {
     struct {
       unsigned int size;	/* number of entries in direct-mapped table */
