@@ -931,25 +931,11 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
     {
       if (*dir_update_ptr->pdir1 < 3)
         ++*dir_update_ptr->pdir1;
-
-	  if (pred_taken) {
-		  ++*dir_update_ptr->taken_counter;
-	  }
-	  else {
-		  *dir_update_ptr->taken_counter -= 9;
-	  }
     }
     else
     { /* not taken */
       if (*dir_update_ptr->pdir1 > 0)
         --*dir_update_ptr->pdir1;
-
-	  if (pred_taken) {
-		  *dir_update_ptr->not_taken_counter -= 9;
-	  }
-	  else {
-		  ++*dir_update_ptr->not_taken_counter;
-	  }
     }
   }
 
