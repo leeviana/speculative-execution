@@ -709,17 +709,12 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   }
   else
   {
-    /* BTB hit, so return target if it's a predicted-taken branch */ //552 - check to see if our counters are met and return accordingly
-	  if (pbtb->taken_counter > 0 && (*(dir_update_ptr->pdir1) >= 2)) { return pbtb->target; }
-	  else if (*(dir_update_ptr->pdir1) >= 2) {
-		  //552 - low confidence prediction to take - so we are going to stall, meaning return address -1
-		  return -1;
-	  }
-	  if (pbtb->not_taken_counter > 0 && (*(dir_update_ptr->pdir1) < 2)) { return 0; /*552 - High confidence we won't take the branch*/ }
-	  else if (*(dir_update_ptr->pdir1) < 2) {
-		  //552 - low confidence prediction to not to take - so we are going to stall, meaning return address -1
-		  return -1;
-	  }
+
+	  /* BTB hit, so return target if it's a predicted-taken branch */ //552 - check to see if our counters are met and return accordingly
+	  if (pbtb->counter < 0) { return -1;  /* Our confidence in the predictor is low, so stall */ }
+
+	  if (*(dir_update_ptr->pdir1) >= 2) { return pbtb->target; }
+	  if (*(dir_update_ptr->pdir1) < 2) { return 0; /*552 - High confidence we won't take the branch*/ }
 
 	  //552 - this code should never occur
 	  return 0;
@@ -923,7 +918,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
    */
 
   /* update state (but not for jumps) */
-  /* Update the taken/not_taken counters now that we have found the correct entry to the BTB, not that this is not */
+  /* Update the counters now that we have found the correct entry to the BTB, not that this is not */
   /* placed in the other update BTB methods because this needs to allow updating when the branch is either taken or not */
   if (dir_update_ptr->pdir1)
   {
@@ -990,11 +985,11 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		  if (pred->btb.btb_data[i].addr == baddr)
 		  {
 			  /* match */
-			  /*552 - update taken/not_taken counters*/
-			  if (!taken && !pred_taken) { pred->btb.btb_data[i].not_taken_counter++; }
-			  if (!taken && pred_taken)  { pred->btb.btb_data[i].not_taken_counter -= 9; }
-			  if (taken  && !pred_taken) { pred->btb.btb_data[i].taken_counter -= 9; }
-			  if (taken  && pred_taken)  { pred->btb.btb_data[i].taken_counter++; }
+			  /*552 - update counters*/
+			  if (!taken && !pred_taken) { pred->btb.btb_data[i].counter++; }
+			  else if (!taken && pred_taken)  { pred->btb.btb_data[i].counter -= 9; }
+			  else if (taken  && !pred_taken) { pred->btb.btb_data[i].counter -= 9; }
+			  else if (taken  && pred_taken)  { pred->btb.btb_data[i].counter++; }
 		  }
 	  }
   }

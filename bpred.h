@@ -113,8 +113,7 @@ struct bpred_btb_ent_t {
   enum md_opcode op;		/* opcode of branch corresp. to addr */
   md_addr_t target;		/* last destination of branch when taken */
 
-  char taken_counter; /*552 - Our global confidence levels - in the BT entry to allow pred agnostacity*/
-  char not_taken_counter;
+  char counter; /*552 - Our global confidence levels - in the BT entry to allow pred agnostacity*/
 
   struct bpred_btb_ent_t *prev, *next; /* lru chaining pointers */
 };
