@@ -993,8 +993,8 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 			  /*552 - update taken/not_taken counters*/
 			  if (!taken && !pred_taken) { pred->btb.btb_data[i].not_taken_counter++; }
 			  if (!taken && pred_taken)  { pred->btb.btb_data[i].not_taken_counter -= 9; }
-			  if (taken  && !pred_taken) { pred->btb.btb_data[i].not_taken_counter -= 9; }
-			  if (taken  && pred_taken)  { pred->btb.btb_data[i].not_taken_counter++; }
+			  if (taken  && !pred_taken) { pred->btb.btb_data[i].taken_counter -= 9; }
+			  if (taken  && pred_taken)  { pred->btb.btb_data[i].taken_counter++; }
 		  }
 	  }
   }
