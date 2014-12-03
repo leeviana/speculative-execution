@@ -883,9 +883,13 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       }
       dassert(lruhead && lruitem);
 
-      if (!pbtb)
-        /* missed in BTB; choose the LRU item in this set as the victim */
-        pbtb = lruitem;
+	  if (!pbtb) {
+		  /* missed in BTB; choose the LRU item in this set as the victim */
+		  pbtb = lruitem;
+
+		  /* 552 - reset it's counter to a non-zero number*/
+		  pbtb->counter = confidence;
+	  }
       /* else hit, and pbtb points to matching BTB entry */
 
       /* Update LRU state: selected item, whether selected because it
