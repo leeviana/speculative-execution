@@ -54,6 +54,9 @@
 
 #define dassert(a) assert(a)
 
+//552 - the constant to initialize our branch predictor confidence level to.
+#define confidence 0
+
 #include <stdio.h>
 
 #include "host.h"
