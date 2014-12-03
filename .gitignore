@@ -11,5 +11,4 @@
 !tests.sh
 !LICENSE
 !README
-!results/
-!results/defaults/
+!results/*
