@@ -1,0 +1,396 @@
+75a76,78
+> /* added for Wattch */
+> #include "power.h"
+> 
+118c121
+< static int bimod_config[1] =
+---
+> int bimod_config[1] =
+123c126
+< static int twolev_config[4] =
+---
+> int twolev_config[4] =
+128c131
+< static int comb_config[1] =
+---
+> int comb_config[1] =
+132c135
+< static int ras_size = 8;
+---
+> int ras_size = 8;
+136c139
+< static int btb_config[2] =
+---
+> int btb_config[2] =
+140c143
+< static int ruu_decode_width;
+---
+> int ruu_decode_width;
+143c146
+< static int ruu_issue_width;
+---
+> int ruu_issue_width;
+152c155
+< static int ruu_commit_width;
+---
+> int ruu_commit_width;
+155c158
+< static int RUU_size = 8;
+---
+> int RUU_size = 8;
+158c161
+< static int LSQ_size = 4;
+---
+> int LSQ_size = 4;
+208c211
+< static int res_ialu;
+---
+> int res_ialu;
+214c217
+< static int res_memport;
+---
+> int res_memport;
+217c220
+< static int res_fpalu;
+---
+> int res_fpalu;
+221a225,261
+> /* options for Wattch */
+> int data_width = 64;
+> 
+> /* static power model results */
+> extern power_result_type power;
+> 
+> /* counters added for Wattch */
+> counter_t rename_access=0;
+> counter_t bpred_access=0;
+> counter_t window_access=0;
+> counter_t lsq_access=0;
+> counter_t regfile_access=0;
+> counter_t icache_access=0;
+> counter_t dcache_access=0;
+> counter_t dcache2_access=0;
+> counter_t alu_access=0;
+> counter_t ialu_access=0;
+> counter_t falu_access=0;
+> counter_t resultbus_access=0;
+> 
+> counter_t window_preg_access=0;
+> counter_t window_selection_access=0;
+> counter_t window_wakeup_access=0;
+> counter_t lsq_store_data_access=0;
+> counter_t lsq_load_data_access=0;
+> counter_t lsq_preg_access=0;
+> counter_t lsq_wakeup_access=0;
+> 
+> counter_t window_total_pop_count_cycle=0;
+> counter_t window_num_pop_count_cycle=0;
+> counter_t lsq_total_pop_count_cycle=0;
+> counter_t lsq_num_pop_count_cycle=0;
+> counter_t regfile_total_pop_count_cycle=0;
+> counter_t regfile_num_pop_count_cycle=0;
+> counter_t resultbus_total_pop_count_cycle=0;
+> counter_t resultbus_num_pop_count_cycle=0;
+> 
+371c411
+< static struct cache_t *cache_il1;
+---
+> struct cache_t *cache_il1;
+377c417
+< static struct cache_t *cache_dl1;
+---
+> struct cache_t *cache_dl1;
+380c420
+< static struct cache_t *cache_dl2;
+---
+> struct cache_t *cache_dl2;
+383c423
+< static struct cache_t *itlb;
+---
+> struct cache_t *itlb;
+386c426
+< static struct cache_t *dtlb;
+---
+> struct cache_t *dtlb;
+441a482,485
+> 
+>       /* Wattch -- Dcache2 access */
+>       dcache2_access++;
+> 
+470a515,517
+> 
+>   /* Wattch -- main memory access -- Wattch-FIXME (offchip) */
+> 
+495a543,546
+> 
+>       /* Wattch -- Dcache2 access */
+>       dcache2_access++;
+> 
+518a570,571
+>   /* Wattch -- main memory access -- Wattch-FIXME (offchip) */
+> 
+1315a1369,1371
+>   /* register power stats */
+>   power_reg_stats(sdb);
+> 
+1376a1433,1435
+> 
+>   /* compute static power estimates */
+>   calculate_power(&power);
+1511a1571,1574
+> 
+>   /* Wattch: values of source operands and result operand used for AF generation */
+>   quad_t val_ra, val_rb, val_rc, val_ra_result;
+> 
+1530a1594,1597
+> /* non-zero if one register operands is ready, update with MAX_IDEPS */
+> #define ONE_OPERANDS_READY(RS)                                              \
+>   ((RS)->idep_ready[0] || (RS)->idep_ready[1])
+> 
+2187c2254,2257
+< 		      /* commit store value to D-cache */
+---
+>   		      /* Wattch -- D-cache access */
+> 		      dcache_access++;
+> 
+>               /* commit store value to D-cache */
+2225a2296,2304
+>       /* Wattch -- committed instruction to arch reg file */
+>       if ((MD_OP_FLAGS(rs->op) & (F_ICOMP|F_FCOMP)) || ((MD_OP_FLAGS(rs->op) & (F_MEM|F_LOAD)) == (F_MEM|F_LOAD))) {
+> 	regfile_access++;
+> #ifdef DYNAMIC_AF	
+> 	regfile_total_pop_count_cycle += pop_count(rs->val_rc);
+> 	regfile_num_pop_count_cycle++;
+> #endif
+>       }
+> 
+2229a2309,2311
+> 	  /* Wattch -- bpred access */
+> 	  bpred_access++;
+> 
+2395a2478,2494
+>       /* Wattch -- 1) Writeback result to resultbus 
+>                    2) Write result to phys. regs (RUU)
+> 		   3) Access wakeup logic
+>        */
+>       if(!(MD_OP_FLAGS(rs->op) & F_CTRL)) {
+> 	window_access++;
+> 	window_preg_access++;
+> 	window_wakeup_access++;
+> 	resultbus_access++;
+> #ifdef DYNAMIC_AF	
+> 	window_total_pop_count_cycle += pop_count(rs->val_rc);
+> 	window_num_pop_count_cycle++;
+> 	resultbus_total_pop_count_cycle += pop_count(rs->val_rc);
+> 	resultbus_num_pop_count_cycle++;
+> #endif
+>       }
+> 
+2418a2518,2519
+> 	  /* Wattch -- bpred access */
+> 	  bpred_access++;
+2645a2747,2749
+> 	  /* Wattch -- access window selection logic */
+> 	  window_selection_access++;
+> 
+2668a2773,2781
+> 
+> 	      /* Wattch -- LSQ access -- write data into store buffer */
+> 	      lsq_access++;
+> 	      lsq_store_data_access++;
+> 	      lsq_preg_access++;
+> #ifdef DYNAMIC_AF	
+> 	      lsq_total_pop_count_cycle += pop_count(rs->val_ra);
+> 	      lsq_num_pop_count_cycle++;
+> #endif
+2693a2807,2810
+> 			  /* Wattch -- LSQ access */
+> 			  lsq_access++;
+> 			  lsq_wakeup_access++;
+> 
+2711a2829,2835
+> 				      lsq_access++;
+> 				      lsq_preg_access++;
+> 				      lsq_load_data_access++;
+> #ifdef DYNAMIC_AF	
+> 				      lsq_total_pop_count_cycle += pop_count(rs->val_ra_result);
+> 				      lsq_num_pop_count_cycle++;
+> #endif
+2731a2856,2857
+> 				  /* Wattch -- D-cache access */
+> 				  dcache_access++;
+2771a2898,2908
+> 			  /* Wattch -- ALU access Wattch-FIXME 
+> 			     (different op types) 
+> 			     also spread out power of multi-cycle ops 
+> 			  */
+> 			  alu_access++;
+> 
+> 			  if((MD_OP_FLAGS(rs->op) & (F_FCOMP))== (F_FCOMP))
+> 			    falu_access++;
+> 			  else
+> 			    ialu_access++;
+> 
+2779a2917,2926
+> 		      /* Wattch -- window access */
+> 		      window_access++;
+> 		      /* read values from window send to FUs */
+> 		      window_preg_access++;
+> 		      window_preg_access++;
+> #ifdef DYNAMIC_AF	
+> 	      window_total_pop_count_cycle += pop_count(rs->val_ra) + pop_count(rs->val_rb);
+> 	      window_num_pop_count_cycle+=2;
+> #endif
+> 
+2803a2951,2960
+> 		  /* Wattch -- Window access */
+> 		  window_access++;
+> 		  /* read values from window send to FUs */
+> 		  window_preg_access++;
+> 		  window_preg_access++;
+> #ifdef DYNAMIC_AF	
+> 	      window_total_pop_count_cycle += pop_count(rs->val_ra) + pop_count(rs->val_rb);
+> 	      window_num_pop_count_cycle+=2;
+> #endif
+> 
+3307a3465,3475
+> 
+>       /* Wattch -- regfile access (value from arch regfile) */
+>       regfile_access++;
+> #ifdef DYNAMIC_AF	
+>       if(idep_num == 0)
+> 	regfile_total_pop_count_cycle += pop_count(rs->val_ra);
+>       else
+> 	regfile_total_pop_count_cycle += pop_count(rs->val_rb);
+>       regfile_num_pop_count_cycle++;
+> #endif
+> 
+3726a3895,3897
+>   /* Wattch:  Added for pop count generation (AFs) */
+>   qword_t val_ra, val_rb, val_rc, val_ra_result;
+> 
+3787a3959,3967
+>       /* Wattch: Get values of source operands */
+> #if defined(TARGET_PISA)
+>       val_ra = GPR(RS);
+>       val_rb = GPR(RT);
+> #elif defined(TARGET_ALPHA)
+>       val_ra = GPR(RA);
+>       val_rb = GPR(RB);
+> #endif
+> 
+3849a4030,4038
+>       /* Wattch: Get values of source operands */
+> #if defined(TARGET_PISA)
+>       val_ra = GPR(RS);
+>       val_rb = GPR(RT);
+> #elif defined(TARGET_ALPHA)
+>       val_ra = GPR(RA);
+>       val_rb = GPR(RB);
+> #endif
+> 
+3914a4104,4106
+> 	  /* Wattch -- Dispatch + RAT lookup stage */
+> 	  rename_access++;
+> 
+3933a4126,4131
+> 	  /* Wattch: Maintain values through core for AFs*/
+> 	  rs->val_ra = val_ra;
+> 	  rs->val_rb = val_rb;
+> 	  rs->val_rc = val_rc;
+> 	  rs->val_ra_result = val_ra_result;
+> 
+3960a4159,4164
+> 	      /* Wattch: Maintain values through core for AFs*/
+> 	      lsq->val_ra = val_ra;
+> 	      lsq->val_rb = val_rb;
+> 	      lsq->val_rc = val_rc;
+> 	      lsq->val_ra_result = val_ra_result;
+> 
+3995a4200,4215
+> 		  /* Wattch -- both operands ready, 2 window write accesses */
+> 		  /* Wattch -- FIXME: currently being read from arch.
+> 		     regfile (in ruu_link_idep) and written to window here.
+> 		     should these values be read from arch. regfile or 
+> 		     another window entry? */
+> 		  window_access++;
+> 		  window_access++;
+> 		  window_preg_access++;
+> 		  window_preg_access++;
+> 
+> #ifdef DYNAMIC_AF	
+> 		  regfile_total_pop_count_cycle += pop_count(rs->val_ra);
+> 		  regfile_total_pop_count_cycle += pop_count(rs->val_rb);
+> 		  regfile_num_pop_count_cycle+=2;
+> #endif
+> 
+3999c4219,4233
+< 	      /* issue may continue when the load/store is issued */
+---
+> 	      else if (ONE_OPERANDS_READY(rs))
+> 		{
+> 		  /* Wattch -- one operand ready, 1 window write accesses */
+> 		  window_access++;
+> 		  window_preg_access++;
+> #ifdef DYNAMIC_AF	
+> 		  if(rs->idep_ready[0])
+> 		    regfile_total_pop_count_cycle += pop_count(rs->val_ra);
+> 		  else
+> 		    regfile_total_pop_count_cycle += pop_count(rs->val_rb);
+> 		  regfile_num_pop_count_cycle++;
+> #endif
+> 
+> 		}
+> 		      /* issue may continue when the load/store is issued */
+4005a4240,4241
+> 		  /* Wattch -- store operand ready, 1 LSQ access */
+> 		  lsq_store_data_access++;
+4012a4249
+> 	      /* Wattch: Regfile writes taken care of inside ruu_link_idep */
+4029a4267,4280
+> 		  /* Wattch -- window access,
+> 		     both operands ready, write them to window,
+> 		  */
+> 		  window_access++;
+> 		  window_access++;
+> 		  window_preg_access++;
+> 		  window_preg_access++;
+> 
+> #ifdef DYNAMIC_AF	
+> 		  regfile_total_pop_count_cycle += pop_count(rs->val_ra);
+> 		  regfile_total_pop_count_cycle += pop_count(rs->val_rb);
+> 		  regfile_num_pop_count_cycle+=2;
+> #endif
+> 
+4034a4286,4303
+> 	      else if (ONE_OPERANDS_READY(rs))
+> 		{
+> 		  /* Wattch -- window access,
+> 		     one operand ready, write them to window,
+> 		  */
+> 		  window_access++;
+> 		  window_preg_access++;
+> #ifdef DYNAMIC_AF	
+> 		  if(rs->idep_ready[0])
+> 		    regfile_total_pop_count_cycle += pop_count(rs->val_ra);
+> 		  else
+> 		    regfile_total_pop_count_cycle += pop_count(rs->val_rb);
+> 		  regfile_num_pop_count_cycle++;
+> #endif
+> 
+> 		  /* could not issue this inst, stall issue until we can */
+> 		  RSLINK_INIT(last_op, rs);
+> 		}
+4216a4486,4489
+> 
+>       /* Wattch: add power for i-fetch stage */
+>       icache_access++;
+> 
+4540a4814,4816
+>       /* added for Wattch to clear hardware access counters */
+>       clear_access_stats();
+> 
+4589a4866,4868
+> 
+>       /* Added by Wattch to update per-cycle power statistics */
+>       update_power_stats();

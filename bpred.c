@@ -26,7 +26,7 @@
  * entirety accompanies all copies.
  *
  * 3. ALL COMMERCIAL USE, AND ALL USE BY FOR PROFIT ENTITIES, IS EXPRESSLY
- * PROHIBITED WITHOUT A LICENSE FROM SIMPLESCALAR, LLC (info@simplescalar.com).
+ * PROHIBITED WITHOUT A LICENSE FROM SIMPLESCALAR, LLC (info@simplescalar.com).I 
  *
  * 4. No nonprofit user may place any restrictions on the use of this software,
  * including as modified by the user, by any other authorized user.
@@ -699,7 +699,7 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
     return (pbtb ? pbtb->target : 1);
   }
 
-  /* otherwise we have a conditional branch */
+  /* otherwise we have a conditional branch */ //552 - not changing this condition for what happens if we miss in the BTB
   if (pbtb == NULL)
   {
     /* BTB miss -- just return a predicted direction */
@@ -709,10 +709,15 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   }
   else
   {
-    /* BTB hit, so return target if it's a predicted-taken branch */
-    return ((*(dir_update_ptr->pdir1) >= 2)
-      ? /* taken */ pbtb->target
-      : /* not taken */ 0);
+
+	  /* BTB hit, so return target if it's a predicted-taken branch */ //552 - check to see if our counters are met and return accordingly
+	  if (pbtb->counter < 0) { return -1;  /* Our confidence in the predictor is low, so stall */ }
+
+	  if (*(dir_update_ptr->pdir1) >= 2) { return pbtb->target; }
+	  if (*(dir_update_ptr->pdir1) < 2) { return 0; /*552 - High confidence we won't take the branch*/ }
+
+	  //552 - this code should never occur
+	  return 0;
   }
 }
 
@@ -840,6 +845,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       shift_reg & ((1 << pred->dirpred.twolev->config.two.shift_width) - 1);
   }
 
+
   /* find BTB entry if it's a taken branch (don't allocate for non-taken) */
   if (taken)
   {
@@ -877,9 +883,13 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       }
       dassert(lruhead && lruitem);
 
-      if (!pbtb)
-        /* missed in BTB; choose the LRU item in this set as the victim */
-        pbtb = lruitem;
+	  if (!pbtb) {
+		  /* missed in BTB; choose the LRU item in this set as the victim */
+		  pbtb = lruitem;
+
+		  /* 552 - reset it's counter to a non-zero number*/
+		  pbtb->counter = confidence;
+	  }
       /* else hit, and pbtb points to matching BTB entry */
 
       /* Update LRU state: selected item, whether selected because it
@@ -912,6 +922,8 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
    */
 
   /* update state (but not for jumps) */
+  /* Update the counters now that we have found the correct entry to the BTB, not that this is not */
+  /* placed in the other update BTB methods because this needs to allow updating when the branch is either taken or not */
   if (dir_update_ptr->pdir1)
   {
     if (taken)
@@ -961,6 +973,29 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   	      --*dir_update_ptr->pmeta;
       }
     }
+  }
+
+  /*552 - update BTB counters, for all branches*/
+  index = (baddr >> MD_BR_SHIFT) & (pred->btb.sets - 1);
+
+  if (pred->btb.assoc > 1)
+  {
+	  index *= pred->btb.assoc;
+
+	  /* Now we know the set; look for a PC match; also identify
+	  * MRU and LRU items */
+	  for (i = index; i < (index + pred->btb.assoc); i++)
+	  {
+		  if (pred->btb.btb_data[i].addr == baddr)
+		  {
+			  /* match */
+			  /*552 - update counters*/
+			  if (!taken && !pred_taken) { pred->btb.btb_data[i].counter++; }
+			  else if (!taken && pred_taken)  { pred->btb.btb_data[i].counter -= 9; }
+			  else if (taken  && !pred_taken) { pred->btb.btb_data[i].counter -= 9; }
+			  else if (taken  && pred_taken)  { pred->btb.btb_data[i].counter++; }
+		  }
+	  }
   }
 
   /* update BTB (but only for taken branches) */
